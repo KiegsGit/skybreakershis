@@ -32,10 +32,6 @@ final class MeteorFx extends Fx {
 		}
 	}
 
-	private static double factor(double p) {
-		return 1.0 - (0.35 * p + 0.65 * p * p);
-	}
-
 	@Override
 	boolean tick(ClientLevel level) {
 		Pt.level = level;
@@ -76,7 +72,7 @@ final class MeteorFx extends Fx {
 	}
 
 	private Vec3 at(int i, double p) {
-		double f = factor(p);
+		double f = FxPayload.meteorFactor(p);
 		return new Vec3(impact[i].x + FxPayload.ENTRY_X * f, impact[i].y + FxPayload.ENTRY_Y * f, impact[i].z + FxPayload.ENTRY_Z * f);
 	}
 

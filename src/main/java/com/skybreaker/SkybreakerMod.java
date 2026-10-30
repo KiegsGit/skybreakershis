@@ -22,6 +22,7 @@ public class SkybreakerMod implements ModInitializer {
 		PayloadTypeRegistry.clientboundPlay().register(FxPayload.TYPE, FxPayload.CODEC);
 		ModItems.init();
 		StrikeManager.init();
+		SlowMo.init();
 		LOGGER.info("Skybreaker: Orbital Arsenal loaded.");
 	}
 }

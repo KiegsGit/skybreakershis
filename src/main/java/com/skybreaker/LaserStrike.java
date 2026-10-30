@@ -2,6 +2,7 @@ package com.skybreaker;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
@@ -27,6 +28,7 @@ public final class LaserStrike extends Strike {
 	public void start() {
 		StrikeUtil.broadcast(level, pos, new FxPayload(FxPayload.LASER, pos.x, pos.y, pos.z,
 			countdown, duration, (float) cfg.laserBeamRadius, new float[0]));
+		cinema(countdown, 2);
 		StrikeUtil.sound(level, pos, SoundEvents.BEACON_ACTIVATE, 4.0f, 1.3f);
 		StrikeUtil.sound(level, pos, SoundEvents.RESPAWN_ANCHOR_CHARGE, 4.0f, 1.0f);
 		countdownTick(countdown, "Satellite Laser");
@@ -41,11 +43,16 @@ public final class LaserStrike extends Strike {
 		}
 		int t = age - countdown;
 		if (t == 0) {
-			StrikeUtil.sound(level, pos, SoundEvents.LIGHTNING_BOLT_THUNDER, 6.0f, 1.8f);
-			StrikeUtil.shake(level, pos, duration, 0.6f);
+			StrikeUtil.sound(level, pos, SoundEvents.LIGHTNING_BOLT_THUNDER, 8.0f, 1.8f);
+			StrikeUtil.recoil(ownerPlayer(), 10, 1.5f);
+			StrikeUtil.flash(level, pos, 0.5f, 14);
+			StrikeUtil.shake(level, pos, duration, 0.8f);
 		}
 		if (t % 40 == 0) {
 			StrikeUtil.sound(level, pos, SoundEvents.BEACON_AMBIENT, 4.0f, 1.5f);
+		}
+		if (t % 8 == 0) {
+			StrikeUtil.lightningNear(level, pos, cfg.laserBeamRadius * 1.5, cfg.laserBeamRadius * 5.0);
 		}
 		if (t % 10 == 0) {
 			burn();
@@ -54,11 +61,30 @@ public final class LaserStrike extends Strike {
 			bore(t);
 		}
 		if (t >= duration) {
-			StrikeUtil.sound(level, pos, SoundEvents.BEACON_DEACTIVATE, 4.0f, 1.2f);
-			StrikeUtil.sound(level, pos, SoundEvents.GENERIC_EXPLODE, 5.0f, 0.9f);
+			finale();
 			return true;
 		}
 		return false;
+	}
+
+	/** The beam collapses into one huge detonation. */
+	private void finale() {
+		double r = cfg.laserFinaleRadius;
+		StrikeUtil.sound(level, pos, SoundEvents.BEACON_DEACTIVATE, 4.0f, 1.2f);
+		StrikeUtil.sound(level, pos, SoundEvents.GENERIC_EXPLODE, 12.0f, 0.55f);
+		StrikeUtil.sound(level, pos, SoundEvents.LIGHTNING_BOLT_THUNDER, 12.0f, 0.6f);
+		if (r > 0) {
+			StrikeUtil.blast(level, pos, r * 2.0, cfg.laserFinaleDamage, owner, true, 10.0f);
+			if (cfg.terrainDestruction && cfg.laserTerrain) {
+				StrikeUtil.crater(level, pos.add(0, -r * 0.25, 0), r, Math.max(0, cfg.maxBlocksPerStrike - removedTotal), cfg.debrisCount / 2);
+			}
+		}
+		for (int i = 0; i < 6; i++) {
+			StrikeUtil.lightningNear(level, pos, 1.0, Math.max(3.0, r * 1.5));
+		}
+		StrikeUtil.shake(level, pos, 60, 2.6f);
+		StrikeUtil.flash(level, pos, 0.9f, 40);
+		SlowMo.trigger(level.getServer());
 	}
 
 	/** Hits everything standing in the beam column (every 10 ticks = every damage-immunity window). */
@@ -75,7 +101,7 @@ public final class LaserStrike extends Strike {
 			if (e.isSpectator()) {
 				continue;
 			}
-			if (e instanceof net.minecraft.server.level.ServerPlayer sp) {
+			if (e instanceof ServerPlayer sp) {
 				if (!cfg.damagePlayers || (!cfg.damageOwner && sp.getUUID().equals(owner))) {
 					continue;
 				}
@@ -86,11 +112,11 @@ public final class LaserStrike extends Strike {
 				continue;
 			}
 			e.hurtServer(level, source, perHit);
-			e.igniteForSeconds(4.0f);
+			e.igniteForSeconds(6.0f);
 		}
 	}
 
-	/** The sustained beam slowly drills a shaft downward (2 ticks per block of depth), within the safety limits. */
+	/** The sustained beam drills a shaft downward (2 ticks per block of depth), within the safety limits. */
 	private void bore(int t) {
 		int targetDepth = Math.min(cfg.laserMaxDepth, t / 2);
 		int radius = Math.max(1, (int) Math.round(cfg.laserBeamRadius * 0.6));

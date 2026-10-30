@@ -38,6 +38,10 @@ public final class StrikeManager {
 				}
 			} catch (Exception e) {
 				SkybreakerMod.LOGGER.error("Strike failed, removing it", e);
+				try {
+					s.cleanup();
+				} catch (Exception ignored) {
+				}
 				it.remove();
 			}
 		}

@@ -13,6 +13,10 @@ public record FxPayload(int kind, double x, double y, double z, int a, int b, fl
 	public static final int LASER = 2;
 	public static final int METEOR = 3;
 	public static final int SHAKE = 4;
+	/** Sent to the firing player only: starts the cinematic HUD (a = countdown ticks, b = weapon 1..3, f = distance). */
+	public static final int CINEMA = 5;
+	/** Screen flash (a = fade ticks, f = intensity 0..1). */
+	public static final int FLASH = 6;
 
 	/** Number of ticks the railgun bolt takes to fall from orbit. */
 	public static final int BOLT_TICKS = 6;
@@ -21,6 +25,11 @@ public record FxPayload(int kind, double x, double y, double z, int a, int b, fl
 	public static final double ENTRY_X = 30.0;
 	public static final double ENTRY_Y = 95.0;
 	public static final double ENTRY_Z = 14.0;
+
+	/** Meteor flight curve shared by server (real entities) and client (trail particles): p 0..1 -> 1..0 distance factor. */
+	public static double meteorFactor(double p) {
+		return 1.0 - (0.35 * p + 0.65 * p * p);
+	}
 
 	public static final CustomPacketPayload.Type<FxPayload> TYPE = new CustomPacketPayload.Type<>(SkybreakerMod.id("fx"));
 	public static final StreamCodec<RegistryFriendlyByteBuf, FxPayload> CODEC = CustomPacketPayload.codec(FxPayload::write, FxPayload::new);

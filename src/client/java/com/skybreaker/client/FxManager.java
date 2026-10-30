@@ -38,6 +38,8 @@ final class FxManager {
 			case FxPayload.RAILGUN -> ACTIVE.add(new RailgunFx(pos, p.a(), p.b(), p.f()));
 			case FxPayload.LASER -> ACTIVE.add(new LaserFx(pos, p.a(), p.b(), p.f()));
 			case FxPayload.METEOR -> ACTIVE.add(new MeteorFx(pos, p.a(), p.b(), p.f(), p.data()));
+			case FxPayload.CINEMA -> CinematicHud.start(p);
+			case FxPayload.FLASH -> CinematicHud.flash(p.f(), p.a());
 			case FxPayload.SHAKE -> {
 				if (p.f() >= shakeIntensity * ((float) shakeTicks / shakeTotal) || shakeTicks <= 0) {
 					shakeTicks = Math.max(1, p.a());
@@ -53,6 +55,7 @@ final class FxManager {
 
 	static void clear() {
 		ACTIVE.clear();
+		CinematicHud.clear();
 		shakeTicks = 0;
 		lastYaw = 0f;
 		lastPitch = 0f;
@@ -68,6 +71,7 @@ final class FxManager {
 		if (mc.isPaused()) {
 			return;
 		}
+		CinematicHud.tick();
 		Iterator<Fx> it = ACTIVE.iterator();
 		while (it.hasNext()) {
 			Fx fx = it.next();
@@ -100,8 +104,8 @@ final class FxManager {
 		if (amp < 0.01) {
 			return;
 		}
-		float dYaw = (float) (Pt.sym() * amp * 1.6);
-		float dPitch = (float) (Pt.sym() * amp);
+		float dYaw = (float) (Pt.sym() * amp * 2.2);
+		float dPitch = (float) (Pt.sym() * amp * 1.4);
 		float beforePitch = player.getXRot();
 		player.setYRot(player.getYRot() + dYaw);
 		player.setXRot(beforePitch + dPitch);

@@ -1,5 +1,6 @@
 package com.skybreaker;
 
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,8 +25,21 @@ public abstract class Strike {
 	/** Called once when the strike is created. */
 	public abstract void start();
 
+	/** Called if the strike is aborted by an error; remove anything it spawned. */
+	public void cleanup() {
+	}
+
 	/** Called every server tick. Returns true when the strike is finished. */
 	public abstract boolean tick();
+
+	/** Starts the cinematic HUD for the firing player (letterbox, countdown, target readout). */
+	protected void cinema(int countdownTicks, int weapon) {
+		ServerPlayer p = ownerPlayer();
+		if (p != null && cfg.cinematic) {
+			ServerPlayNetworking.send(p, new FxPayload(FxPayload.CINEMA, pos.x, pos.y, pos.z, countdownTicks, weapon,
+				(float) p.position().distanceTo(pos), new float[0]));
+		}
+	}
 
 	protected void tell(String message) {
 		ServerPlayer p = level.getServer().getPlayerList().getPlayer(owner);
